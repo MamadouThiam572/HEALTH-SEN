@@ -416,9 +416,21 @@ public class DashboardController {
         if (currentUser == null)
             return;
 
-        // Message de bienvenue
+        // Message de bienvenue professionnel (Intemporel)
         if (welcomeLabel != null) {
-            welcomeLabel.setText("Bonjour, " + currentUser.getNom() + " !");
+            String displayName = "";
+            // Recherche systématique du profil pour garantir l'affichage du nom
+            List<Profile> profiles = profileRepository.findByUser(currentUser);
+            if (!profiles.isEmpty()) {
+                Profile main = profiles.stream()
+                    .filter(Profile::isMainProfile)
+                    .findFirst()
+                    .orElse(profiles.get(0));
+                displayName = main.getFirstName() + " " + main.getLastName();
+            } else {
+                displayName = currentUser.getNom();
+            }
+            welcomeLabel.setText("Bienvenue, " + displayName + " !");
         }
 
         if (currentDateLabel != null) {
@@ -1166,21 +1178,13 @@ public class DashboardController {
                         HealthRecord::getRecordDate,
                         Collectors.averagingDouble(HealthRecord::getWellnessScore)));
 
-        if (stats.isEmpty()) {
-            // Données fictives pédagogiques si vide
-            series.getData().add(new XYChart.Data<>("Lun", 75));
-            series.getData().add(new XYChart.Data<>("Mar", 80));
-            series.getData().add(new XYChart.Data<>("Mer", 78));
-            series.getData().add(new XYChart.Data<>("Jeu", 85));
-            series.getData().add(new XYChart.Data<>("Ven", 82));
-        } else {
+        if (!stats.isEmpty()) {
             stats.keySet().stream().sorted().forEach(date -> {
                 String dateStr = date.format(DateTimeFormatter.ofPattern("dd/MM"));
                 series.getData().add(new XYChart.Data<>(dateStr, stats.get(date)));
             });
+            healthChart.getData().add(series);
         }
-
-        healthChart.getData().add(series);
     }
 
     @FXML
