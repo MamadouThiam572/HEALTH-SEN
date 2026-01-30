@@ -4,6 +4,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import javafx.scene.image.*?>
+
 <StackPane xmlns="http://javafx.com/javafx/17" 
            xmlns:fx="http://javafx.com/fxml/1" 
            fx:controller="com.senegalsante.controller.javafx.RegisterController"
@@ -15,7 +17,12 @@
         </padding>
         
         <VBox alignment="CENTER" spacing="8">
-            <Label text="Sénégal Santé" styleClass="login-title"/>
+            <ImageView fitWidth="100" preserveRatio="true">
+                <image>
+                    <Image url="@../images/logo.png"/>
+                </image>
+            </ImageView>
+            <Label text="HEALTHSen" styleClass="login-title"/>
             <Label text="Créer votre compte" styleClass="login-subtitle"/>
         </VBox>
         

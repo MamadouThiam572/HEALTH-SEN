@@ -1,5 +1,5 @@
 /* ========================================
-   SÉNÉGAL SANTÉ - MASTERPIECE CSS
+   HEALTHSen - MASTERPIECE CSS
    Design Médical Premium et Ultra-Moderne
    ======================================== */
 
@@ -39,6 +39,8 @@
     -fx-background-color: -background;
     -fx-font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
     -fx-font-size: 14px;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
 }
 
 /* ========================================
@@ -98,29 +100,83 @@
     -fx-background-color: linear-gradient(to bottom right, #f59e0b, #d97706);
 }
 
-.summary-card .label {
-    -fx-text-fill: white;
-    -fx-opacity: 0.9;
+.summary-red {
+    -fx-background-color: linear-gradient(to bottom right, #ef4444, #dc2626);
 }
 
-.summary-card .value {
+.summary-card .label-summary {
     -fx-text-fill: white;
-    -fx-font-size: 24px;
-    -fx-font-weight: 700;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+    -fx-letter-spacing: 0.8px;
+    -fx-opacity: 0.8;
+}
+
+.summary-card .value-summary {
+    -fx-text-fill: white;
+    -fx-font-size: 26px;
+    -fx-font-weight: 800;
+    -fx-font-family: 'Outfit', sans-serif;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.1), 5, 0, 0, 2);
+}
+
+.summary-card .label-summary-patient {
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: 600;
+    -fx-opacity: 0.95;
+    -fx-padding: 2 0 2 0;
+}
+
+.summary-card .label-summary-footer {
+    -fx-text-fill: rgba(255, 255, 255, 0.85);
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-background-radius: 6px;
+    -fx-padding: 6 12 6 12;
+    -fx-alignment: center;
+}
+
+/* ========================================
+   HEADER DE BIENVENUE PREMIUM
+   ======================================== */
+.welcome-header {
+    -fx-background-color: white;
+    -fx-background-radius: 20px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.05), 15, 0, 0, 10);
+    -fx-border-color: rgba(15, 23, 42, 0.05);
+    -fx-border-width: 1px;
+    -fx-border-radius: 20px;
+}
+
+.label-title-modern {
+    -fx-font-size: 28px;
+    -fx-font-weight: 800;
+    -fx-text-fill: -primary-dark;
+    -fx-font-family: 'Outfit', 'Segoe UI Bold', sans-serif;
+}
+
+.label-subtitle-modern {
+    -fx-font-size: 15px;
+    -fx-text-fill: -text-medium;
+    -fx-opacity: 0.8;
 }
 
 /* ========================================
    TYPOGRAPHIE
    ======================================== */
 .label-title {
-    -fx-font-size: 32px;
+    -fx-font-size: 30px;
     -fx-font-weight: 800;
     -fx-text-fill: -primary-dark;
+    -fx-font-family: 'Outfit', 'Segoe UI Bold', sans-serif;
 }
 
 .label-subtitle {
-    -fx-font-size: 16px;
-    -fx-text-fill: -text-light;
+    -fx-font-size: 15px;
+    -fx-text-fill: -text-medium;
+    -fx-opacity: 0.8;
 }
 
 .section-title {
@@ -295,4 +351,98 @@
 .date-picker:focused {
     -fx-border-color: -secondary;
     -fx-background-color: white;
+}
+
+/* ========================================
+   STYLISATION DES GRAPHIQUES (CHARTS)
+   ======================================== */
+.chart {
+    -fx-padding: 10;
+}
+
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+
+.chart-vertical-grid-lines {
+    -fx-stroke: #f1f5f9;
+}
+
+.chart-horizontal-grid-lines {
+    -fx-stroke: #f1f5f9;
+}
+
+/* Couleurs des Séries */
+.default-color0.chart-series-line {
+    -fx-stroke: #10b981;
+    -fx-stroke-width: 3px;
+}
+
+/* Bien-être: Vert */
+.default-color0.chart-line-symbol {
+    -fx-background-color: #10b981, white;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+}
+
+.default-color1.chart-series-line {
+    -fx-stroke: #ef4444;
+    -fx-stroke-width: 3px;
+}
+
+/* Douleur: Rouge */
+.default-color1.chart-line-symbol {
+    -fx-background-color: #ef4444, white;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+}
+
+.axis {
+    -fx-tick-label-fill: #94a3b8;
+    -fx-tick-length: 5;
+}
+
+/* ========================================
+   MÉDICAMENTS DU JOUR (INTERACTIF)
+   ======================================== */
+.intake-row {
+    -fx-transition: 0.3s all;
+}
+
+.intake-row-taken {
+    -fx-background-color: #f1f5f9;
+    -fx-opacity: 0.6;
+}
+
+.intake-text-taken {
+    -fx-strikethrough: true;
+    -fx-text-fill: #94a3b8;
+}
+
+.intake-time-taken {
+    -fx-text-fill: #64748b;
+}
+
+.med-checkbox {
+    -fx-cursor: hand;
+}
+
+.axis-label {
+    -fx-text-fill: -primary-dark;
+    -fx-font-weight: bold;
+}
+
+/* Bouton de suppression minimaliste */
+.btn-delete-small {
+    -fx-background-color: transparent;
+    -fx-text-fill: -danger;
+    -fx-font-size: 16px;
+    -fx-padding: 5;
+    -fx-background-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.btn-delete-small:hover {
+    -fx-background-color: #fee2e2;
+    -fx-text-fill: #b91c1c;
 }

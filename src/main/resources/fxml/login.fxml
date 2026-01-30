@@ -4,6 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Text?>
+<?import javafx.scene.image.*?>
 
 <!--
     Écran de Connexion - Sénégal Santé
@@ -29,16 +30,16 @@
         
         <!-- En-tête -->
         <VBox alignment="CENTER" spacing="8">
-            <!-- Icône ou Logo (optionnel) -->
-            <!-- <ImageView fitWidth="80" fitHeight="80" preserveRatio="true">
+            <!-- Icône ou Logo -->
+            <ImageView fitWidth="120" fitHeight="120" preserveRatio="true">
                 <image>
                     <Image url="@../images/logo.png"/>
                 </image>
-            </ImageView> -->
+            </ImageView>
             
             <!-- Titre -->
-            <Label text="Sénégal Santé" styleClass="login-title"/>
-            <Label text="Carnet Numérique" styleClass="login-subtitle"/>
+            <Label text="HEALTHSen" styleClass="login-title"/>
+            <Label text="La Santé Est Prioritaire" styleClass="login-subtitle"/>
             
             <Region minHeight="16"/>
             
@@ -55,7 +56,8 @@
                 <Label text="Adresse Email" styleClass="label-subheading"/>
                 <TextField fx:id="emailField" 
                           promptText="exemple@email.com"
-                          styleClass="text-field"/>
+                          styleClass="text-field"
+                          onAction="#handleLogin"/>
             </VBox>
             
             <!-- Champ Mot de Passe -->
@@ -68,7 +70,8 @@
                 </HBox>
                 <PasswordField fx:id="passwordField" 
                               promptText="••••••••"
-                              styleClass="text-field"/>
+                              styleClass="text-field"
+                              onAction="#handleLogin"/>
             </VBox>
             
             <!-- Message d'Erreur -->
@@ -108,7 +111,7 @@
         <!-- Pied de Page -->
         <VBox alignment="CENTER" spacing="8">
             <Region minHeight="16"/>
-            <Label text="© 2026 Sénégal Santé" 
+            <Label text="© 2026 HEALTHSen" 
                    styleClass="label-muted" 
                    style="-fx-font-size: 12px;"/>
             <Label text="Application 100% Hors Ligne" 

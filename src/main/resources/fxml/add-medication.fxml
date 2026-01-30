@@ -33,8 +33,11 @@
                     <Label text="Nom :" GridPane.rowIndex="0" GridPane.columnIndex="0" />
                     <TextField fx:id="medNameField" promptText="ex: Paracétamol, Amoxicilline..." GridPane.rowIndex="0" GridPane.columnIndex="1" styleClass="text-field" />
                     
-                    <Label text="Dosage :" GridPane.rowIndex="1" GridPane.columnIndex="0" />
-                    <TextField fx:id="medDosageField" promptText="ex: 500mg, 1 gélule..." GridPane.rowIndex="1" GridPane.columnIndex="1" />
+                    <Label text="Membre :" GridPane.rowIndex="1" GridPane.columnIndex="0" />
+                    <ComboBox fx:id="medMemberCombo" promptText="Sélectionner un membre" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1" />
+                    
+                    <Label text="Dosage :" GridPane.rowIndex="2" GridPane.columnIndex="0" />
+                    <TextField fx:id="medDosageField" promptText="ex: 500mg, 1 gélule..." GridPane.rowIndex="2" GridPane.columnIndex="1" />
                 </GridPane>
             </VBox>
 

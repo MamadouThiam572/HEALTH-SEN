@@ -64,14 +64,17 @@ public class SenegalSanteApp extends Application {
             scene.getStylesheets().add(getClass().getResource("/css/styles.css").toExternalForm());
 
             // Configuration de la fenêtre (Stage)
-            primaryStage.setTitle("Sénégal Santé - Carnet Numérique");
+            primaryStage.setTitle("HEALTHSen - La Santé Est Prioritaire");
             primaryStage.setScene(scene);
             primaryStage.setMinWidth(1000);
             primaryStage.setMinHeight(700);
 
             // Optionnel : Icône de l'application
-            // primaryStage.getIcons().add(new
-            // Image(getClass().getResourceAsStream("/images/logo.png")));
+            try {
+                primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/images/logo.png")));
+            } catch (Exception e) {
+                // Ignore if icon not found
+            }
 
             // Affichage de la fenêtre
             primaryStage.show();

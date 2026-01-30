@@ -23,7 +23,7 @@ public class PdfExportService {
 
             // Title
             Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
-            Paragraph title = new Paragraph("Carnet de Santé Numérique - Sénégal Santé", titleFont);
+            Paragraph title = new Paragraph("Carnet de Santé Numérique - HEALTHSen", titleFont);
             title.setAlignment(Element.ALIGN_CENTER);
             document.add(title);
             document.add(new Paragraph(" "));

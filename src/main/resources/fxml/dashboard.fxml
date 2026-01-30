@@ -6,6 +6,7 @@
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Text?>
 
@@ -20,9 +21,13 @@
             <!-- Logo area -->
             <VBox alignment="CENTER" spacing="10">
                 <padding><Insets bottom="40"/></padding>
-                <Label text="🏥" style="-fx-font-size: 40px;"/>
-                <Label text="SÉNÉGAL SANTÉ" style="-fx-text-fill: white; -fx-font-weight: 800; -fx-font-size: 18px; -fx-letter-spacing: 1px;"/>
-                <Label text="Votre Compagnon Santé" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;"/>
+                <ImageView fitWidth="100" preserveRatio="true">
+                    <image>
+                        <Image url="@../images/logo.png"/>
+                    </image>
+                </ImageView>
+                <Label text="HEALTHSen" style="-fx-text-fill: white; -fx-font-weight: 800; -fx-font-size: 18px; -fx-letter-spacing: 1px;"/>
+                <Label text="La Santé Est Prioritaire" style="-fx-text-fill: #94a3b8; -fx-font-size: 11px;"/>
             </VBox>
             
             <Button text="🏠  Tableau de Bord" styleClass="sidebar-item, sidebar-item-active" maxWidth="Infinity" alignment="CENTER_LEFT"/>
@@ -45,37 +50,58 @@
         <ScrollPane fitToWidth="true" style="-fx-background-color: transparent;">
             <VBox styleClass="content-area" spacing="30">
                 
-                <!-- ENTETE AVEC SALUTATION -->
-                <HBox alignment="CENTER_LEFT" spacing="20">
-                    <VBox spacing="5" HBox.hgrow="ALWAYS">
-                        <Label fx:id="welcomeLabel" text="Bonjour, Dr. Moussa !" styleClass="label-title"/>
-                        <Label text="Voici le résumé de votre santé pour aujourd'hui." styleClass="label-subtitle"/>
+                <!-- ENTETE DE BIENVENUE PREMIUM -->
+                <HBox styleClass="welcome-header" alignment="CENTER_LEFT" spacing="25">
+                    <padding><Insets top="20" right="30" bottom="20" left="30"/></padding>
+                    
+                    <!-- Avatar Stylisé -->
+                    <StackPane>
+                        <Circle radius="35" style="-fx-fill: linear-gradient(to bottom right, #38bdf8, #0284c7);"/>
+                        <Label text="👤" style="-fx-font-size: 30px; -fx-text-fill: white;"/>
+                    </StackPane>
+                    
+                    <VBox spacing="2" HBox.hgrow="ALWAYS">
+                        <Label fx:id="welcomeLabel" text="Bonjour, Daouda Ngom !" styleClass="label-title-modern"/>
+                        <HBox alignment="CENTER_LEFT" spacing="8">
+                            <Label text="✨" style="-fx-font-size: 14px;"/>
+                            <Label text="Voici le résumé de votre santé pour aujourd'hui." styleClass="label-subtitle-modern"/>
+                        </HBox>
                     </VBox>
-                    <!-- Bouton Action Rapide -->
-                    <Button text="+ Nouvel Enregistrement" styleClass="btn-primary" onAction="#handleHealthTracking"/>
+                    
+                    <!-- Date et Heure Discrètes -->
+                    <VBox alignment="CENTER_RIGHT" spacing="5">
+                        <Label fx:id="currentDateLabel" text="Jeudi 29 Janvier 2026" style="-fx-text-fill: -text-medium; -fx-font-weight: 600;"/>
+                        <HBox alignment="CENTER_RIGHT" spacing="10">
+                            <Label text="Lieu: Dakar, Sénégal" style="-fx-text-fill: -text-light; -fx-font-size: 11px;"/>
+                        </HBox>
+                    </VBox>
                 </HBox>
 
                 <!-- CARTES DE RÉSUMÉ (TOP) -->
                 <HBox spacing="25">
                     <!-- Prochaine Prise -->
-                    <VBox styleClass="summary-card, summary-blue" spacing="10" HBox.hgrow="ALWAYS">
-                        <Label text="PROCHAINE PRISE" styleClass="label"/>
-                        <Label fx:id="nextMedNameLabel" text="Aucune" styleClass="value"/>
-                        <Label fx:id="nextMedTimeLabel" text="Pas de prise prévue" styleClass="label" style="-fx-font-size: 13px;"/>
+                    <VBox styleClass="summary-card, summary-blue" spacing="8" HBox.hgrow="ALWAYS" 
+                          onMouseClicked="#handleMedications" style="-fx-cursor: hand;">
+                        <Label text="PROCHAINE PRISE" styleClass="label-summary"/>
+                        <Label fx:id="nextMedNameLabel" text="Aucune" styleClass="value-summary"/>
+                        <Label fx:id="nextMedPatientLabel" text="" styleClass="label-summary-patient"/>
+                        <Label fx:id="nextMedTimeLabel" text="Pas de prise prévue" styleClass="label-summary-footer"/>
                     </VBox>
                     
                     <!-- Prochain RDV -->
-                    <VBox styleClass="summary-card, summary-green" spacing="10" HBox.hgrow="ALWAYS">
-                        <Label text="PROCHAIN RENDEZ-VOUS" styleClass="label"/>
-                        <Label fx:id="nextAppointmentLabel" text="Dr. Sow (Dentiste)" styleClass="value"/>
-                        <Label fx:id="nextAppointmentDateLabel" text="Demain à 10:30" styleClass="label" style="-fx-font-size: 13px;"/>
+                    <VBox styleClass="summary-card, summary-green" spacing="8" HBox.hgrow="ALWAYS" 
+                          onMouseClicked="#handleAppointments" style="-fx-cursor: hand;">
+                        <Label text="PROCHAIN RENDEZ-VOUS" styleClass="label-summary"/>
+                        <Label fx:id="nextAppointmentLabel" text="Dr. Sow" styleClass="value-summary"/>
+                        <Label fx:id="nextAppointmentPatientLabel" text="" styleClass="label-summary-patient"/>
+                        <Label fx:id="nextAppointmentDateLabel" text="Planifiez votre RDV" styleClass="label-summary-footer"/>
                     </VBox>
                     
                     <!-- État de Santé -->
-                    <VBox styleClass="summary-card, summary-orange" spacing="10" HBox.hgrow="ALWAYS">
+                    <VBox fx:id="wellnessCard" styleClass="summary-card, summary-orange" spacing="10" HBox.hgrow="ALWAYS">
                         <Label text=" BIEN-ÊTRE GÉNÉRAL" styleClass="label"/>
                         <Label fx:id="healthScoreLabel" text="85 %" styleClass="value"/>
-                        <Label text="Très bon état global" styleClass="label" style="-fx-font-size: 13px;"/>
+                        <Label fx:id="healthStatusLabel" text="Très bon état global" styleClass="label" style="-fx-font-size: 13px;"/>
                     </VBox>
                 </HBox>
 
@@ -107,16 +133,9 @@
                         <Region HBox.hgrow="ALWAYS"/>
                         <Hyperlink text="Voir l'historique complet" style="-fx-text-fill: -secondary;"/>
                     </HBox>
-                    <TableView fx:id="recentRecordsTable" minHeight="200" maxHeight="200">
-                        <columns>
-                            <TableColumn fx:id="dateColumn" text="Date" prefWidth="150" />
-                            <TableColumn fx:id="typeColumn" text="Type de Bilan" prefWidth="200" />
-                            <TableColumn fx:id="descriptionColumn" text="Observations &amp; Symptômes" prefWidth="500" />
-                        </columns>
-                        <placeholder>
-                            <Label text="Aucun bilan récent. Prenez soin de vous !" styleClass="label-subtitle"/>
-                        </placeholder>
-                    </TableView>
+                    <VBox fx:id="recentRecordsContainer" spacing="12">
+                        <!-- Les cartes d'historique seront injectées ici -->
+                    </VBox>
                 </VBox>
 
             </VBox>

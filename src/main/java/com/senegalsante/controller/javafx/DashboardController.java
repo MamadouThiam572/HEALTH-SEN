@@ -9,6 +9,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.Node;
 import javafx.geometry.Insets;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.XYChart;
@@ -28,6 +29,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 /**
  * Contrôleur pour le Dashboard (Tableau de Bord)
@@ -70,6 +74,9 @@ public class DashboardController {
     private Label welcomeLabel;
 
     @FXML
+    private Label currentDateLabel;
+
+    @FXML
     private Label totalRecordsLabel;
 
     @FXML
@@ -79,16 +86,28 @@ public class DashboardController {
     private Label healthScoreLabel;
 
     @FXML
+    private Label healthStatusLabel;
+
+    @FXML
+    private VBox wellnessCard;
+
+    @FXML
     private Label nextMedNameLabel;
 
     @FXML
     private Label nextMedTimeLabel;
 
     @FXML
+    private Label nextMedPatientLabel;
+
+    @FXML
     private Label nextAppointmentLabel;
 
     @FXML
     private Label nextAppointmentDateLabel;
+
+    @FXML
+    private Label nextAppointmentPatientLabel;
 
     @FXML
     private TableView<Medication> medicationTable;
@@ -164,16 +183,7 @@ public class DashboardController {
     private VBox healthHistoryContainer;
 
     @FXML
-    private TableView<HealthRecord> recentRecordsTable;
-
-    @FXML
-    private TableColumn<HealthRecord, String> dateColumn;
-
-    @FXML
-    private TableColumn<HealthRecord, String> typeColumn;
-
-    @FXML
-    private TableColumn<HealthRecord, String> descriptionColumn;
+    private VBox recentRecordsContainer;
 
     @FXML
     private ComboBox<String> filterRecordTypeCombo;
@@ -210,6 +220,9 @@ public class DashboardController {
 
     @FXML
     private ComboBox<String> medFrequencyCombo;
+
+    @FXML
+    private ComboBox<Profile> medMemberCombo;
 
     @FXML
     private TextArea medNotesArea;
@@ -336,28 +349,8 @@ public class DashboardController {
 
         // Les données seront chargées une fois que setCurrentUser sera appelé
         // Si on est sur le dashboard, charger les données du dashboard
-        if (recentRecordsTable != null) {
-            setupHealthTableColumns();
+        if (recentRecordsContainer != null) {
             loadRecentRecords();
-        }
-    }
-
-    /**
-     * Configure les colonnes du tableau
-     */
-    private void setupHealthTableColumns() {
-        if (dateColumn != null && recentRecordsTable != null) {
-            dateColumn.setCellValueFactory(cellData -> {
-                LocalDate date = cellData.getValue().getRecordDate();
-                if (date == null)
-                    return new javafx.beans.property.SimpleStringProperty("");
-                return new javafx.beans.property.SimpleStringProperty(
-                        date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-            });
-            if (typeColumn != null)
-                typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
-            if (descriptionColumn != null)
-                descriptionColumn.setCellValueFactory(new PropertyValueFactory<>("description"));
         }
     }
 
@@ -428,6 +421,14 @@ public class DashboardController {
             welcomeLabel.setText("Bonjour, " + currentUser.getNom() + " !");
         }
 
+        if (currentDateLabel != null) {
+            String dateFormatted = LocalDate.now()
+                    .format(DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", java.util.Locale.FRENCH));
+            // Capitalize first letter
+            dateFormatted = dateFormatted.substring(0, 1).toUpperCase() + dateFormatted.substring(1);
+            currentDateLabel.setText(dateFormatted);
+        }
+
         // Charger les statistiques
         loadStatistics();
 
@@ -448,26 +449,10 @@ public class DashboardController {
 
         // Charger le graphique
         loadHealthChart();
-    }
 
-    private void updateNextMedicationSummary(List<MedicationIntake> todayIntakes) {
-        if (nextMedNameLabel == null || nextMedTimeLabel == null)
-            return;
-
-        MedicationIntake next = todayIntakes.stream()
-                .filter(i -> i.getStatus() == MedicationIntake.Status.PENDING)
-                .filter(i -> i.getScheduledDateTime().isAfter(LocalDateTime.now()))
-                .findFirst()
-                .orElse(null);
-
-        if (next != null) {
-            nextMedNameLabel.setText(next.getMedication().getName());
-            nextMedTimeLabel.setText(
-                    "Aujourd'hui à " + next.getScheduledDateTime().format(DateTimeFormatter.ofPattern("HH:mm")));
-        } else {
-            nextMedNameLabel.setText("Aucune");
-            nextMedTimeLabel.setText("Pas de prise prévue");
-        }
+        // Mettre à jour les cartes de résumé
+        updateNextMedicationCard();
+        updateNextAppointmentCard();
     }
 
     /**
@@ -519,13 +504,34 @@ public class DashboardController {
             dailyMedicationsContainer.getChildren().add(noMedLabel);
         } else {
             for (MedicationIntake intake : todayIntakes) {
-                HBox intakeRow = new HBox(10);
+                HBox intakeRow = new HBox(12);
                 intakeRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
                 intakeRow.getStyleClass().add("card-small");
-                intakeRow.setPrefWidth(250);
+                intakeRow.getStyleClass().add("intake-row");
+                intakeRow.setPrefWidth(280);
+
+                boolean isTaken = intake.getStatus() == MedicationIntake.Status.TAKEN;
 
                 CheckBox takenCheckbox = new CheckBox();
-                takenCheckbox.setSelected(intake.getStatus() == MedicationIntake.Status.TAKEN);
+                takenCheckbox.getStyleClass().add("med-checkbox");
+                takenCheckbox.setSelected(isTaken);
+
+                Label timeLabel = new Label(intake.getScheduledDateTime().format(DateTimeFormatter.ofPattern("HH:mm")));
+                timeLabel.getStyleClass().add("text-bold");
+
+                Label medLabel = new Label(
+                        intake.getMedication().getName() + " (" + intake.getMedication().getDosage() + ")");
+                medLabel.getStyleClass().add("label-muted");
+
+                // Apply "Taken" styles initially
+                if (isTaken) {
+                    intakeRow.getStyleClass().add("intake-row-taken");
+                    timeLabel.getStyleClass().add("intake-time-taken");
+                    medLabel.getStyleClass().add("intake-text-taken");
+                    medLabel.setStyle("-fx-strikethrough: true;"); // Works if it's a Text node or in some specific
+                                                                   // implementations, but safer to use opacity
+                }
+
                 takenCheckbox.setOnAction(event -> {
                     if (takenCheckbox.isSelected()) {
                         intake.setStatus(MedicationIntake.Status.TAKEN);
@@ -535,15 +541,8 @@ public class DashboardController {
                         intake.setTakenDateTime(null);
                     }
                     medicationIntakeRepository.save(intake);
-                    loadDailyMedications(); // Refresh the list
+                    loadDailyMedications(); // Refresh to apply all visual changes
                 });
-
-                Label timeLabel = new Label(intake.getScheduledDateTime().format(DateTimeFormatter.ofPattern("HH:mm")));
-                timeLabel.getStyleClass().add("text-bold");
-
-                Label medLabel = new Label(
-                        intake.getMedication().getName() + " (" + intake.getMedication().getDosage() + ")");
-                medLabel.getStyleClass().add("label-muted");
 
                 Region spacer = new Region();
                 HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -551,7 +550,7 @@ public class DashboardController {
                 intakeRow.getChildren().addAll(takenCheckbox, timeLabel, medLabel, spacer);
                 dailyMedicationsContainer.getChildren().add(intakeRow);
             }
-            updateNextMedicationSummary(todayIntakes);
+            updateNextMedicationCard();
         }
     }
 
@@ -695,8 +694,8 @@ public class DashboardController {
         List<Profile> profiles = profileRepository.findByUser(currentUser);
 
         for (Profile profile : profiles) {
-            VBox card = createFamilyCard(profile);
-            familyFlowPane.getChildren().add(card);
+            // Utiliser la même carte que dans l'onglet Famille pour plus de cohérence
+            familyFlowPane.getChildren().add(createFamilyMemberCard(profile));
         }
     }
 
@@ -730,32 +729,48 @@ public class DashboardController {
         return card;
     }
 
-    /**
-     * Charge les statistiques
-     */
     private void loadStatistics() {
-        if (healthScoreLabel == null)
+        if (healthScoreLabel == null || currentUser == null)
             return;
 
-        // Score de santé (exemple simplifié)
-        healthScoreLabel.setText("85 %");
+        // Calculer le Score de santé (moyenne des 30 derniers jours)
+        List<HealthRecord> records = healthRecordRepository.findByUserId(currentUser.getId());
+        LocalDate thirtyDaysAgo = LocalDate.now().minusDays(30);
+
+        double averageWellness = records.stream()
+                .filter(r -> r.getWellnessScore() != null)
+                .filter(r -> !r.getRecordDate().isBefore(thirtyDaysAgo))
+                .mapToInt(HealthRecord::getWellnessScore)
+                .average()
+                .orElse(0.0);
+
+        if (averageWellness == 0.0) {
+            healthScoreLabel.setText("-- %");
+            if (healthStatusLabel != null)
+                healthStatusLabel.setText("Aucune donnée récente");
+        } else {
+            int score = (int) Math.round(averageWellness);
+            healthScoreLabel.setText(score + " %");
+
+            if (healthStatusLabel != null && wellnessCard != null) {
+                wellnessCard.getStyleClass().removeAll("summary-orange", "summary-green", "summary-red");
+
+                if (score >= 80) {
+                    healthStatusLabel.setText("Excellent état global");
+                    wellnessCard.getStyleClass().add("summary-green");
+                } else if (score >= 50) {
+                    healthStatusLabel.setText("Bon état général");
+                    wellnessCard.getStyleClass().add("summary-orange");
+                } else {
+                    healthStatusLabel.setText("État de fatigue détecté");
+                    wellnessCard.getStyleClass().add("summary-red");
+                }
+            }
+        }
 
         // Nombre total d'enregistrements
         if (totalRecordsLabel != null) {
-            long count = healthRecordRepository.findByUserId(currentUser.getId()).size();
-            totalRecordsLabel.setText(String.valueOf(count));
-        }
-
-        // Prochain rendez-vous (logique réelle simplifiée)
-        List<com.senegalsante.model.Appointment> upcoming = appointmentRepository
-                .findByUserOrderByDateTimeAsc(currentUser);
-        if (!upcoming.isEmpty() && nextAppointmentLabel != null) {
-            com.senegalsante.model.Appointment next = upcoming.get(0);
-            nextAppointmentLabel.setText(next.getDoctorName() + " (" + next.getSpecialty() + ")");
-            if (nextAppointmentDateLabel != null) {
-                nextAppointmentDateLabel
-                        .setText(next.getDateTime().format(DateTimeFormatter.ofPattern("dd/MM à HH:mm")));
-            }
+            totalRecordsLabel.setText(String.valueOf(records.size()));
         }
     }
 
@@ -813,27 +828,61 @@ public class DashboardController {
         painChart.getData().clear();
 
         XYChart.Series<String, Number> wellnessSeries = new XYChart.Series<>();
-        wellnessSeries.setName("Bien-être");
+        wellnessSeries.setName("Niveau de Bien-être (%)");
 
         XYChart.Series<String, Number> painSeries = new XYChart.Series<>();
         painSeries.setName("Intensité Douleur/Symptôme");
 
         List<HealthRecord> all = healthRecordRepository.findByUserId(currentUser.getId());
-        // Trier par date et limiter aux 15 derniers pour le graphique
-        all.stream().sorted((a, b) -> a.getRecordDate().compareTo(b.getRecordDate()))
-                .filter(r -> r.getRecordDate().isAfter(LocalDate.now().minusDays(30)))
-                .forEach(r -> {
-                    String dateStr = r.getRecordDate().format(DateTimeFormatter.ofPattern("dd/MM"));
-                    if (r.getWellnessScore() != null) {
-                        wellnessSeries.getData().add(new XYChart.Data<>(dateStr, r.getWellnessScore()));
-                    }
-                    if (r.getIntensity() != null) {
-                        painSeries.getData().add(new XYChart.Data<>(dateStr, r.getIntensity()));
-                    }
-                });
 
-        wellnessChart.getData().add(wellnessSeries);
-        painChart.getData().add(painSeries);
+        // Récupérer les filtres
+        Profile memberFilter = (filterMemberCombo != null) ? filterMemberCombo.getValue() : null;
+        LocalDate dateValue = (filterRecordDatePicker != null) ? filterRecordDatePicker.getValue() : null;
+        LocalDate finalDateFilter = (dateValue != null) ? dateValue : LocalDate.now().minusDays(30);
+
+        // Appliquer les filtres aux données du graphique
+        List<HealthRecord> filtered = all.stream()
+                .filter(r -> r != null && r.getRecordDate() != null)
+                .filter(r -> {
+                    if (memberFilter == null)
+                        return true;
+                    if (r.getProfile() == null)
+                        return false;
+                    return memberFilter.getId().equals(r.getProfile().getId());
+                })
+                .filter(r -> !r.getRecordDate().isBefore(finalDateFilter))
+                .collect(Collectors.toList());
+
+        // Agréger par jour
+        Map<LocalDate, Double> wellnessAvg = filtered.stream()
+                .filter(r -> r.getWellnessScore() != null)
+                .collect(Collectors.groupingBy(
+                        HealthRecord::getRecordDate,
+                        Collectors.averagingDouble(HealthRecord::getWellnessScore)));
+
+        Map<LocalDate, Double> painAvg = filtered.stream()
+                .filter(r -> r.getIntensity() != null)
+                .collect(Collectors.groupingBy(
+                        HealthRecord::getRecordDate,
+                        Collectors.averagingDouble(HealthRecord::getIntensity)));
+
+        // Ajouter les données triées par date
+        wellnessAvg.keySet().stream().sorted().forEach(date -> {
+            String label = date.format(DateTimeFormatter.ofPattern("dd/MM"));
+            if (wellnessChart != null)
+                wellnessSeries.getData().add(new XYChart.Data<>(label, wellnessAvg.get(date)));
+        });
+
+        painAvg.keySet().stream().sorted().forEach(date -> {
+            String label = date.format(DateTimeFormatter.ofPattern("dd/MM"));
+            if (painChart != null)
+                painSeries.getData().add(new XYChart.Data<>(label, painAvg.get(date)));
+        });
+
+        if (wellnessChart != null)
+            wellnessChart.getData().add(wellnessSeries);
+        if (painChart != null)
+            painChart.getData().add(painSeries);
     }
 
     private void loadHealthHistory() {
@@ -849,8 +898,15 @@ public class DashboardController {
         LocalDate dateFilter = filterRecordDatePicker != null ? filterRecordDatePicker.getValue() : null;
 
         records.stream()
+                .filter(r -> r != null && r.getRecordDate() != null)
                 .filter(r -> "Tous les types".equals(typeFilter) || typeFilter.equals(r.getType()))
-                .filter(r -> memberFilter == null || memberFilter.equals(r.getProfile()))
+                .filter(r -> {
+                    if (memberFilter == null)
+                        return true;
+                    if (r.getProfile() == null)
+                        return false;
+                    return memberFilter.getId().equals(r.getProfile().getId());
+                })
                 .filter(r -> dateFilter == null || !r.getRecordDate().isBefore(dateFilter))
                 .sorted((a, b) -> b.getRecordDate().compareTo(a.getRecordDate())) // Plus récent en premier
                 .forEach(r -> {
@@ -949,15 +1005,130 @@ public class DashboardController {
 
     @FXML
     private void loadRecentRecords() {
-        if (recentRecordsTable == null || currentUser == null)
+        if (recentRecordsContainer == null || currentUser == null)
             return;
+
+        recentRecordsContainer.getChildren().clear();
+
         List<HealthRecord> records = healthRecordRepository.findByUserId(currentUser.getId());
-        recentRecordsTable.setItems(FXCollections.observableArrayList(
-                records.stream().sorted((a, b) -> b.getRecordDate().compareTo(a.getRecordDate())).limit(5).toList()));
+        List<HealthRecord> sortedRecords = records.stream()
+                .sorted((a, b) -> b.getRecordDate().compareTo(a.getRecordDate()))
+                .limit(4) // Limiter à 4 pour un dashboard aéré
+                .toList();
+
+        if (sortedRecords.isEmpty()) {
+            Label placeholder = new Label("Aucun bilan récent. Prenez soin de vous !");
+            placeholder.getStyleClass().add("label-subtitle");
+            recentRecordsContainer.getChildren().add(placeholder);
+            return;
+        }
+
+        for (HealthRecord record : sortedRecords) {
+            recentRecordsContainer.getChildren().add(createModernRecordRow(record));
+        }
+    }
+
+    private javafx.scene.Node createModernRecordRow(HealthRecord record) {
+        HBox row = new HBox(20);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setPadding(new Insets(12, 16, 12, 16));
+        row.setStyle(
+                "-fx-background-color: #f8fafc; -fx-background-radius: 12px; -fx-border-color: #f1f5f9; -fx-border-width: 1px; -fx-border-radius: 12px;");
+
+        // Icone basée sur le type
+        String icon = "📝";
+        String color = "#64748b";
+        if ("Douleur".equals(record.getType())) {
+            icon = "⚠️";
+            color = "#ef4444";
+        } else if ("Bien-être général".equals(record.getType())) {
+            icon = "❤️";
+            color = "#10b981";
+        } else if ("Paramètre vital".equals(record.getType())) {
+            icon = "📊";
+            color = "#3b82f6";
+        }
+
+        StackPane iconBox = new StackPane(new Label(icon));
+        iconBox.setMinSize(40, 40);
+        iconBox.setStyle(
+                "-fx-background-color: white; -fx-background-radius: 10px; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.05), 5, 0, 0, 2);");
+
+        VBox info = new VBox(2);
+
+        HBox titleBox = new HBox(8);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+
+        Label title = new Label(record.getType());
+        title.setStyle("-fx-font-weight: 700; -fx-text-fill: -primary-dark; -fx-font-size: 14px;");
+
+        // Membre de la famille concerné
+        Label patientLabel = new Label();
+        Profile p = record.getProfile();
+        String patientName = (p != null) ? p.getNom() : (currentUser != null ? currentUser.getNom() : "");
+        patientLabel.setText("•  " + patientName);
+        patientLabel.setStyle("-fx-text-fill: -secondary; -fx-font-weight: 600; -fx-font-size: 12px;");
+
+        titleBox.getChildren().addAll(title, patientLabel);
+
+        Label desc = new Label(record.getDescription());
+        desc.setStyle("-fx-text-fill: -text-medium; -fx-font-size: 13px;");
+        desc.setWrapText(false);
+        desc.setMaxWidth(600);
+
+        info.getChildren().addAll(titleBox, desc);
+        HBox.setHgrow(info, Priority.ALWAYS);
+
+        Label dateLabel = new Label(
+                record.getRecordDate().format(DateTimeFormatter.ofPattern("dd MMM", java.util.Locale.FRENCH)));
+        dateLabel.setStyle("-fx-text-fill: -text-light; -fx-font-weight: 600; -fx-font-size: 13px;");
+
+        // Bouton de suppression
+        Button deleteBtn = new Button("🗑");
+        deleteBtn.getStyleClass().add("btn-delete-small");
+        deleteBtn.setOnAction(e -> confirmAndDeleteRecord(record));
+        deleteBtn.setVisible(false); // Caché par défaut, visible au survol
+
+        row.getChildren().addAll(iconBox, info, dateLabel, deleteBtn);
+
+        // Effet hover
+        row.setOnMouseEntered(e -> {
+            row.setStyle(
+                    "-fx-background-color: #f1f5f9; -fx-background-radius: 12px; -fx-border-color: -secondary; -fx-border-width: 1px; -fx-border-radius: 12px; -fx-cursor: hand;");
+            deleteBtn.setVisible(true);
+        });
+        row.setOnMouseExited(e -> {
+            row.setStyle(
+                    "-fx-background-color: #f8fafc; -fx-background-radius: 12px; -fx-border-color: #f1f5f9; -fx-border-width: 1px; -fx-border-radius: 12px;");
+            deleteBtn.setVisible(false);
+        });
+
+        return row;
+    }
+
+    private void confirmAndDeleteRecord(HealthRecord record) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirmation de suppression");
+        alert.setHeaderText("Voulez-vous vraiment supprimer cet enregistrement ?");
+        alert.setContentText("Cette action est irréversible.");
+
+        // Custom styling for Alert (basic approach for now)
+        ButtonType deleteButton = new ButtonType("Supprimer", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButton = new ButtonType("Annuler", ButtonBar.ButtonData.CANCEL_CLOSE);
+        alert.getButtonTypes().setAll(deleteButton, cancelButton);
+
+        alert.showAndWait().ifPresent(type -> {
+            if (type == deleteButton) {
+                healthRecordRepository.delete(record);
+                loadRecentRecords();
+                loadHealthChart(); // Rafraîchir aussi le graphique
+            }
+        });
     }
 
     @FXML
     public void handleFilterRecords() {
+        loadHealthCharts();
         loadHealthHistory();
     }
 
@@ -982,27 +1153,30 @@ public class DashboardController {
         healthChart.getData().clear();
 
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Bien-être (%)");
+        series.setName("Moyenne Bien-être (%)");
 
         List<HealthRecord> records = healthRecordRepository.findByUserId(currentUser.getId());
+        LocalDate tenDaysAgo = LocalDate.now().minusDays(10);
 
-        List<HealthRecord> chartData = records.stream()
+        // Agréger par jour (Moyenne) pour une courbe lisse et compréhensible
+        Map<LocalDate, Double> stats = records.stream()
                 .filter(r -> r.getWellnessScore() != null)
-                .sorted((a, b) -> a.getRecordDate().compareTo(b.getRecordDate()))
-                .limit(10)
-                .toList();
+                .filter(r -> !r.getRecordDate().isBefore(tenDaysAgo))
+                .collect(Collectors.groupingBy(
+                        HealthRecord::getRecordDate,
+                        Collectors.averagingDouble(HealthRecord::getWellnessScore)));
 
-        if (chartData.isEmpty()) {
-            // Données fictives si vide
+        if (stats.isEmpty()) {
+            // Données fictives pédagogiques si vide
             series.getData().add(new XYChart.Data<>("Lun", 75));
             series.getData().add(new XYChart.Data<>("Mar", 80));
             series.getData().add(new XYChart.Data<>("Mer", 78));
             series.getData().add(new XYChart.Data<>("Jeu", 85));
             series.getData().add(new XYChart.Data<>("Ven", 82));
         } else {
-            chartData.forEach(r -> {
-                String dateStr = r.getRecordDate().format(DateTimeFormatter.ofPattern("dd/MM"));
-                series.getData().add(new XYChart.Data<>(dateStr, r.getWellnessScore()));
+            stats.keySet().stream().sorted().forEach(date -> {
+                String dateStr = date.format(DateTimeFormatter.ofPattern("dd/MM"));
+                series.getData().add(new XYChart.Data<>(dateStr, stats.get(date)));
             });
         }
 
@@ -1123,9 +1297,42 @@ public class DashboardController {
     @FXML
     public void handleAddMedication() {
         showDialog("/fxml/add-medication.fxml", "Nouveau Médicament", controller -> {
+            if (controller.medMemberCombo != null) {
+                List<Profile> profiles = profileRepository.findByUser(currentUser);
+                controller.medMemberCombo.setItems(FXCollections.observableArrayList(profiles));
+
+                // Sélectionner le profil principal par défaut
+                Profile main = profiles.stream().filter(Profile::isMainProfile).findFirst()
+                        .orElse(profiles.isEmpty() ? null : profiles.get(0));
+                controller.medMemberCombo.setValue(main);
+
+                // Style d'affichage des noms
+                controller.medMemberCombo.setCellFactory(lv -> new ListCell<Profile>() {
+                    @Override
+                    protected void updateItem(Profile p, boolean empty) {
+                        super.updateItem(p, empty);
+                        if (empty || p == null)
+                            setText(null);
+                        else
+                            setText(p.isMainProfile() ? "👤 Moi (Principal)"
+                                    : "👤 " + p.getFirstName() + " (" + p.getRelation() + ")");
+                    }
+                });
+                controller.medMemberCombo.setButtonCell(new ListCell<Profile>() {
+                    @Override
+                    protected void updateItem(Profile p, boolean empty) {
+                        super.updateItem(p, empty);
+                        if (empty || p == null)
+                            setText(null);
+                        else
+                            setText(p.isMainProfile() ? "👤 Moi" : "👤 " + p.getFirstName());
+                    }
+                });
+            }
             if (controller.medFrequencyCombo != null) {
                 controller.medFrequencyCombo.setItems(FXCollections.observableArrayList(
                         "1 fois par jour", "2 fois par jour", "3 fois par jour", "4 fois par jour"));
+                controller.medFrequencyCombo.setValue("1 fois par jour");
             }
             if (controller.medStartDatePicker != null) {
                 controller.medStartDatePicker.setValue(LocalDate.now());
@@ -1216,6 +1423,7 @@ public class DashboardController {
         med.setFrequency(medFrequencyCombo.getValue());
         med.setNotes(medNotesArea.getText());
         med.setUser(currentUser);
+        med.setProfile(medMemberCombo.getValue()); // Association au membre de la famille
         med.setStartDate(medStartDatePicker.getValue());
 
         int durationDays = 7;
@@ -1553,7 +1761,8 @@ public class DashboardController {
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
         Label iconLabel = new Label(profile.isMainProfile() ? "👑" : "👤");
-        iconLabel.setStyle("-fx-font-size: 24px;");
+        iconLabel.setStyle(
+                "-fx-font-size: 28px; -fx-padding: 5; -fx-background-color: #f1f5f9; -fx-background-radius: 50;");
 
         VBox nameBox = new VBox(2);
         Label nameLabel = new Label(profile.getFirstName());
@@ -1564,31 +1773,77 @@ public class DashboardController {
 
         header.getChildren().addAll(iconLabel, nameBox);
 
+        // Informations Vitales
+        VBox vitalsBox = new VBox(5);
+        vitalsBox.setStyle("-fx-background-color: #f8fafc; -fx-padding: 8; -fx-background-radius: 6;");
+
+        // Calculer l'âge
+        LocalDate birthDate = profile.getBirthDate();
+        int age = (birthDate != null) ? java.time.Period.between(birthDate, LocalDate.now()).getYears() : 0;
+        Label ageLabel = new Label("🎂 " + age + " ans (" + profile.getGender() + ")");
+        ageLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: -text-medium;");
+
+        Label bloodLabel = new Label(
+                "🩸 Groupe: " + (profile.getBloodGroup() != null ? profile.getBloodGroup() : "Non précisé"));
+        bloodLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #b91c1c; -fx-font-weight: 600;");
+
+        vitalsBox.getChildren().addAll(ageLabel, bloodLabel);
+
+        // Allergies
+        Label allergyLabel = new Label("⚠️ Allergies: "
+                + (profile.getAllergies() != null && !profile.getAllergies().isEmpty() ? profile.getAllergies()
+                        : "Aucune"));
+        allergyLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #9a3412; -fx-wrap-text: true;");
+        allergyLabel.setMaxWidth(210);
+
         // Data: Medications
         List<Medication> meds = medicationRepository.findByProfile(profile);
+
         long activeMeds = meds.stream()
                 .filter(m -> m.getEndDate() == null || m.getEndDate().isAfter(LocalDate.now()))
                 .count();
 
         Label medsLabel = new Label("💊 " + activeMeds + " traitement(s) en cours");
-        medsLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2563eb;");
+        medsLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #2563eb; -fx-font-weight: bold;");
 
         // Data: Next Appointment
         List<Appointment> nextAppts = appointmentRepository.findByProfileAndDateTimeAfterOrderByDateTimeAsc(profile,
                 LocalDateTime.now());
+
         Label apptLabel;
         if (!nextAppts.isEmpty()) {
             Appointment next = nextAppts.get(0);
-            String dateStr = next.getDateTime().format(DateTimeFormatter.ofPattern("dd/MM HH:mm"));
-            apptLabel = new Label("📅 Prochain RDV: " + dateStr);
-            apptLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #059669;");
+            String dateStr = next.getDateTime()
+                    .format(DateTimeFormatter.ofPattern("dd MMM à HH:mm", java.util.Locale.FRENCH));
+            apptLabel = new Label("📅 RDV: " + dateStr);
+            apptLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #059669; -fx-font-weight: bold;");
         } else {
             apptLabel = new Label("📅 Aucun RDV prévu");
             apptLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #9ca3af;");
         }
 
+        // Dernier bilan de santé
+        Label healthLabel = new Label("Pas de bilan récent");
+        healthLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: -text-light;");
+
+        List<HealthRecord> records = healthRecordRepository.findByProfileOrderByRecordDateDesc(profile);
+        if (!records.isEmpty()) {
+            HealthRecord last = records.get(0);
+            if (last.getWellnessScore() != null) {
+                int score = last.getWellnessScore();
+                healthLabel.setText("Dernier bilan: " + score + "%");
+                if (score >= 80)
+                    healthLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #059669; -fx-font-weight: bold;");
+                else if (score >= 50)
+                    healthLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #d97706; -fx-font-weight: bold;");
+                else
+                    healthLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #dc2626; -fx-font-weight: bold;");
+            }
+        }
+
         HBox footer = new HBox(10);
         footer.setAlignment(Pos.CENTER_RIGHT);
+        footer.setPadding(new Insets(5, 0, 0, 0));
 
         if (!profile.isMainProfile()) {
             Button deleteBtn = new Button("🗑");
@@ -1611,7 +1866,8 @@ public class DashboardController {
             footer.getChildren().add(deleteBtn);
         }
 
-        card.getChildren().addAll(header, new Separator(), medsLabel, apptLabel, footer);
+        card.getChildren().addAll(header, vitalsBox, allergyLabel, new Separator(), medsLabel, apptLabel, healthLabel,
+                footer);
 
         card.setOnMouseClicked(e -> showFamilyMemberDetails(profile));
 
@@ -1724,10 +1980,11 @@ public class DashboardController {
         List<MedicationIntake> upcomingIntakes = medicationIntakeRepository
                 .findByUserAndDateRange(currentUser, startOfToday, endOfTomorrow);
 
-        // Filtrer pour ne garder que les prises non prises et dans le futur
+        // Filtrer pour trouver la PRIORITÉ : soit le plus vieux en retard, soit le
+        // prochain futur
         MedicationIntake nextIntake = upcomingIntakes.stream()
                 .filter(intake -> intake.getStatus() == MedicationIntake.Status.PENDING)
-                .filter(intake -> intake.getScheduledDateTime().isAfter(LocalDateTime.now()))
+                // On prend le premier chronologiquement (le plus ancien en attente)
                 .min((a, b) -> a.getScheduledDateTime().compareTo(b.getScheduledDateTime()))
                 .orElse(null);
 
@@ -1735,24 +1992,35 @@ public class DashboardController {
             // Afficher le nom du médicament
             nextMedNameLabel.setText(nextIntake.getMedication().getName());
 
+            // Afficher le patient concerné
+            if (nextMedPatientLabel != null) {
+                Profile p = nextIntake.getMedication().getProfile();
+                String patientName = (p != null) ? p.getNom() : currentUser.getNom();
+                nextMedPatientLabel.setText("Pour: " + patientName);
+            }
+
             // Formater l'heure
             LocalDateTime scheduleTime = nextIntake.getScheduledDateTime();
             LocalDate today = LocalDate.now();
             LocalDate scheduleDate = scheduleTime.toLocalDate();
 
             String timeText;
-            if (scheduleDate.equals(today)) {
+            if (scheduleTime.isBefore(LocalDateTime.now())) {
+                timeText = "EN RETARD (depuis " + scheduleTime.format(DateTimeFormatter.ofPattern("HH:mm")) + ")";
+                nextMedTimeLabel.setStyle("-fx-text-fill: #feb2b2; -fx-font-weight: 800;");
+            } else if (scheduleDate.equals(today)) {
                 timeText = "Aujourd'hui à " + scheduleTime.format(DateTimeFormatter.ofPattern("HH:mm"));
-            } else if (scheduleDate.equals(today.plusDays(1))) {
-                timeText = "Demain à " + scheduleTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+                nextMedTimeLabel.setStyle("-fx-text-fill: rgba(255,255,255,0.9);");
             } else {
-                timeText = scheduleTime.format(DateTimeFormatter.ofPattern("dd/MM à HH:mm"));
+                timeText = "Demain à " + scheduleTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+                nextMedTimeLabel.setStyle("-fx-text-fill: rgba(255,255,255,0.9);");
             }
 
             nextMedTimeLabel.setText(timeText);
         } else {
-            // Aucun médicament prévu
-            nextMedNameLabel.setText("Aucune prise prévue");
+            nextMedNameLabel.setText("Aucune prise");
+            if (nextMedPatientLabel != null)
+                nextMedPatientLabel.setText("");
             nextMedTimeLabel.setText("Vous êtes à jour !");
         }
     }
@@ -1765,13 +2033,14 @@ public class DashboardController {
         if (currentUser == null || nextAppointmentLabel == null || nextAppointmentDateLabel == null)
             return;
 
-        // Récupérer tous les rendez-vous futurs triés par date
-        List<Appointment> upcomingAppointments = appointmentRepository
+        // Récupérer tous les rendez-vous triés par date
+        List<Appointment> allAppointments = appointmentRepository
                 .findByUserOrderByDateTimeAsc(currentUser);
 
-        // Filtrer pour ne garder que les rendez-vous futurs
-        Appointment nextAppointment = upcomingAppointments.stream()
-                .filter(apt -> apt.getDateTime().isAfter(LocalDateTime.now()))
+        // Filtrer pour trouver la PRIORITÉ : soit le plus ancien en retard, soit le
+        // prochain futur (Statut SCHEDULED)
+        Appointment nextAppointment = allAppointments.stream()
+                .filter(apt -> apt.getStatus() == Appointment.Status.SCHEDULED)
                 .findFirst()
                 .orElse(null);
 
@@ -1783,24 +2052,35 @@ public class DashboardController {
             }
             nextAppointmentLabel.setText(doctorInfo);
 
+            // Afficher le patient concerné
+            if (nextAppointmentPatientLabel != null) {
+                Profile p = nextAppointment.getProfile();
+                String patientName = (p != null) ? p.getNom() : currentUser.getNom();
+                nextAppointmentPatientLabel.setText("Patient: " + patientName);
+            }
+
             // Formater la date et l'heure
             LocalDateTime aptTime = nextAppointment.getDateTime();
             LocalDate today = LocalDate.now();
             LocalDate aptDate = aptTime.toLocalDate();
 
             String dateText;
-            if (aptDate.equals(today)) {
+            if (aptTime.isBefore(LocalDateTime.now())) {
+                dateText = "EN RETARD (était prévu à " + aptTime.format(DateTimeFormatter.ofPattern("HH:mm")) + ")";
+                nextAppointmentDateLabel.setStyle("-fx-text-fill: #feb2b2; -fx-font-weight: 800;");
+            } else if (aptDate.equals(today)) {
                 dateText = "Aujourd'hui à " + aptTime.format(DateTimeFormatter.ofPattern("HH:mm"));
-            } else if (aptDate.equals(today.plusDays(1))) {
-                dateText = "Demain à " + aptTime.format(DateTimeFormatter.ofPattern("HH:mm"));
+                nextAppointmentDateLabel.setStyle("-fx-text-fill: rgba(255,255,255,0.9);");
             } else {
-                dateText = aptTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy à HH:mm"));
+                dateText = aptTime.format(DateTimeFormatter.ofPattern("dd/MM à HH:mm"));
+                nextAppointmentDateLabel.setStyle("-fx-text-fill: rgba(255,255,255,0.9);");
             }
 
             nextAppointmentDateLabel.setText(dateText);
         } else {
-            // Aucun rendez-vous prévu
-            nextAppointmentLabel.setText("Aucun rendez-vous");
+            nextAppointmentLabel.setText("Aucun RDV");
+            if (nextAppointmentPatientLabel != null)
+                nextAppointmentPatientLabel.setText("");
             nextAppointmentDateLabel.setText("Planifiez votre prochain RDV");
         }
     }

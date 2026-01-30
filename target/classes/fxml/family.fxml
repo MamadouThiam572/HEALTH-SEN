@@ -4,6 +4,8 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import javafx.scene.image.*?>
+
 <BorderPane fx:id="mainContainer" xmlns="http://javafx.com/javafx/17" 
             xmlns:fx="http://javafx.com/fxml/1" 
             fx:controller="com.senegalsante.controller.javafx.DashboardController"
@@ -13,8 +15,12 @@
         <VBox styleClass="sidebar" spacing="10">
             <VBox alignment="CENTER" spacing="10">
                 <padding><Insets bottom="40"/></padding>
-                <Label text="🏥" style="-fx-font-size: 40px;"/>
-                <Label text="SÉNÉGAL SANTÉ" style="-fx-text-fill: white; -fx-font-weight: 800; -fx-font-size: 18px;"/>
+                <ImageView fitWidth="100" preserveRatio="true">
+                    <image>
+                        <Image url="@../images/logo.png"/>
+                    </image>
+                </ImageView>
+                <Label text="HEALTHSen" style="-fx-text-fill: white; -fx-font-weight: 800; -fx-font-size: 18px;"/>
             </VBox>
             
             <Button text="🏠  Tableau de Bord" styleClass="sidebar-item" maxWidth="Infinity" alignment="CENTER_LEFT" onAction="#handleDashboard"/>
